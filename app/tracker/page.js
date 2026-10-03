@@ -8,6 +8,9 @@ export default function Tracker() {
   const [setup, setSetup] = useState(null);
   useEffect(() => { fetch('/api/setup').then((r) => r.json()).then(setSetup).catch(() => {}); }, []);
   const sens = useRef(0.4);
+  const started = useRef(false);
+  useEffect(() => { if (localStorage.getItem('kr_tracking') === '1') start(); }, []); // eslint-disable-line
+
   const st = useRef({ lat: null, lng: null, speed: 0, acc: 0, battery: null, charging: false, motion: false });
 
   const send = async () => {
@@ -21,6 +24,9 @@ export default function Tracker() {
   };
 
   const start = async () => {
+    if (started.current) return;
+    started.current = true;
+    localStorage.setItem('kr_tracking', '1');
     setOn(true);
     const lock = async () => { try { await navigator.wakeLock?.request('screen'); } catch {} };
     lock(); document.addEventListener('visibilitychange', () => document.visibilityState === 'visible' && lock());
@@ -56,7 +62,8 @@ export default function Tracker() {
           <div className="cell"><small>Battery</small><b className="num">{v.battery != null ? Math.round(v.battery) : '--'}%</b></div>
           <div className="cell"><small>GPS ±</small><b className="num">{v.acc ? Math.round(v.acc) : '--'}m</b></div>
         </div>
-        <div className="status">Screen on rehne do. Charger lagao.</div></>}
+        <div className="status">Screen on rehne do. Charger lagao. Refresh karne par ye apne aap chalu ho jayega.</div>
+        <button className="btn ghost" onClick={() => { localStorage.removeItem('kr_tracking'); location.reload(); }}>Tracking band karo</button></>}
       <div className="status">{log}</div>
       {setup && <div className="guard" style={{ textAlign: 'left' }}>
         <b>Screen band hone par bhi chalane ke liye</b>
