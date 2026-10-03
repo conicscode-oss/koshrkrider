@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: koshrk-rider
+    runtime: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: ADMIN_USER
+        value: admin
+      - key: ADMIN_PASS
+        value: "12345"
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: NTFY_TOPIC
+        value: ""

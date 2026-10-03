@@ -1,0 +1,8 @@
+{
+  "name": "koshrk-rider",
+  "version": "1.0.0",
+  "private": true,
+  "engines": { "node": ">=18" },
+  "scripts": { "dev": "next dev", "build": "next build", "start": "next start -p ${PORT:-3000}" },
+  "dependencies": { "leaflet": "1.9.4", "next": "14.2.5", "react": "18.3.1", "react-dom": "18.3.1", "react-leaflet": "4.2.1" }
+}
