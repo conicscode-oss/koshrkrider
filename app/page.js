@@ -8,6 +8,8 @@ export default function Home() {
   const [sound, setSound] = useState(false);
   const [focus, setFocus] = useState(0);
   const [radius, setRadius] = useState(20);
+  const [level, setLevel] = useState(4); // 1 kam .. 5 bahut zyada
+  const LV = { 1: 2, 2: 1, 3: 0.6, 4: 0.4, 5: 0.25 };
   const [msg, setMsg] = useState('');
 
   useEffect(() => {
@@ -34,7 +36,7 @@ export default function Home() {
   }, [s?.alarm, sound]); // eslint-disable-line
 
   const arm = async (on) => {
-    const r = await fetch('/api/arm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ armed: on, radius }) });
+    const r = await fetch('/api/arm', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ armed: on, radius, sens: LV[level] }) });
     const j = await r.json();
     if (!j.ok) setMsg(j.error); else { setMsg(''); setS(j.state); }
   };
@@ -44,7 +46,7 @@ export default function Home() {
   if (!s) return <div className="center">Loading…</div>;
   const l = s.last;
   const ago = l ? Math.round((Date.now() - l.ts) / 1000) : null;
-  const online = ago !== null && ago < 20;
+  const online = ago !== null && ago < 45;
 
   return (
     <div className="app">
@@ -73,8 +75,9 @@ export default function Home() {
 
         <div className={'guard' + (s.armed ? ' on' : '')}>
           <b>Chori se bachao (Theft mode)</b>
+          {!s.armed && <div className="row"><span>Hilne par alarm</span><input type="range" min="1" max="5" value={level} onChange={(e) => setLevel(+e.target.value)} /><b className="num">{['', 'Kam', 'Medium', 'Zyada', 'Bahut zyada', 'Sabse zyada'][level]}</b></div>}
           {!s.armed && <div className="row"><span>Parking se</span><input type="range" min="5" max="100" value={radius} onChange={(e) => setRadius(+e.target.value)} /><b className="num">{radius} m</b></div>}
-          {s.armed && <div className="status">Bike ki parking lock hai. {s.radius}m se zyada hili ya shake hui to alarm bajega.</div>}
+          {s.armed && <div className="status">Bike lock hai. Thoda bhi hili ya {s.radius}m door gayi to alarm bajega.</div>}
           {msg && <div className="err">{msg}</div>}
           <button className={'btn' + (s.armed ? ' off' : '')} onClick={() => arm(!s.armed)}>{s.armed ? (s.alarm ? 'Alarm band karo' : 'Theft mode band karo') : 'Yahin bike lock karo'}</button>
           <button className="btn ghost" onClick={enableAlerts}>{sound ? '🔊 Siren chalu hai' : '🔇 Siren aur notification chalu karo'}</button>

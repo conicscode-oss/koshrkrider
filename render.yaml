@@ -12,5 +12,7 @@ services:
         value: "12345"
       - key: SESSION_SECRET
         generateValue: true
+      - key: DEVICE_KEY
+        generateValue: true
       - key: NTFY_TOPIC
         value: ""

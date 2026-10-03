@@ -1,10 +1,13 @@
 'use client';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export default function Tracker() {
   const [on, setOn] = useState(false);
   const [v, setV] = useState({});
   const [log, setLog] = useState('');
+  const [setup, setSetup] = useState(null);
+  useEffect(() => { fetch('/api/setup').then((r) => r.json()).then(setSetup).catch(() => {}); }, []);
+  const sens = useRef(0.4);
   const st = useRef({ lat: null, lng: null, speed: 0, acc: 0, battery: null, charging: false, motion: false });
 
   const send = async () => {
@@ -12,7 +15,7 @@ export default function Tracker() {
     try {
       const r = await fetch('/api/update', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
       if (r.status === 401) { location.href = '/login'; return; }
-      const j = await r.json(); setLog(`${new Date().toLocaleTimeString()} bheja · theft mode: ${j.armed ? 'ON' : 'OFF'}${j.alarm ? ' · ALARM' : ''}`);
+      const j = await r.json(); if (j.sens) sens.current = j.sens; setLog(`${new Date().toLocaleTimeString()} bheja · theft mode: ${j.armed ? 'ON' : 'OFF'}${j.alarm ? ' · ALARM' : ''}`);
     } catch { setLog('Internet nahi hai, dobara koshish kar raha hai…'); }
     setV({ ...st.current });
   };
@@ -28,14 +31,17 @@ export default function Tracker() {
       const up = () => Object.assign(st.current, { battery: b.level * 100, charging: b.charging });
       up(); b.addEventListener('levelchange', up); b.addEventListener('chargingchange', up);
     } catch {}
-    let prev = null, last = 0;
+    let base = null, last = 0;
     window.addEventListener('devicemotion', (e) => {
-      const a = e.accelerationIncludingGravity; if (!a) return;
-      if (prev && Math.abs(a.x - prev.x) + Math.abs(a.y - prev.y) + Math.abs(a.z - prev.z) > 2.5) {
+      const a = e.accelerationIncludingGravity; if (!a || a.x == null) return;
+      const cur = [a.x, a.y, a.z];
+      if (!base) { base = cur; return; }
+      const dev = Math.abs(cur[0] - base[0]) + Math.abs(cur[1] - base[1]) + Math.abs(cur[2] - base[2]);
+      base = base.map((b, i) => b * 0.97 + cur[i] * 0.03); // slow baseline: dheere hilna bhi pakadta hai
+      if (dev > sens.current) {
         st.current.motion = true;
-        if (Date.now() - last > 2000) { last = Date.now(); send(); }
+        if (Date.now() - last > 1500) { last = Date.now(); send(); }
       }
-      prev = { x: a.x, y: a.y, z: a.z };
     });
     send(); setInterval(send, 4000);
   };
@@ -52,6 +58,13 @@ export default function Tracker() {
         </div>
         <div className="status">Screen on rehne do. Charger lagao.</div></>}
       <div className="status">{log}</div>
+      {setup && <div className="guard" style={{ textAlign: 'left' }}>
+        <b>Screen band hone par bhi chalane ke liye</b>
+        <div className="status">Bike wale mobile me <b>Traccar Client</b> app (Play Store, free) install karo aur ye daalo:</div>
+        <div className="status">Device identifier:<br /><b style={{ color: 'var(--text)', wordBreak: 'break-all' }}>{setup.id}</b></div>
+        <div className="status">Server URL:<br /><b style={{ color: 'var(--text)', wordBreak: 'break-all' }}>{setup.url}</b></div>
+        <div className="status">Frequency: 10 · Distance: 0 · Angle: 0 · Accuracy: Highest · Wakelock: ON. Phir Service status ON karo.</div>
+      </div>}
       <a href="/" style={{ color: 'var(--amber)' }}>Dashboard</a>
     </div></div>
   );

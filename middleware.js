@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 
-const open = ['/login', '/api/login', '/manifest.json', '/sw.js', '/icon-'];
+const open = ['/login', '/api/login', '/api/traccar', '/manifest.json', '/sw.js', '/icon-'];
 
 export function middleware(req) {
   const p = req.nextUrl.pathname;
